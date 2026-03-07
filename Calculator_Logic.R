@@ -45,13 +45,13 @@ vehicle_type_list <- c(
   "Waterborne Craft",
   "Aircraft"
 )
-transportation_type <- c("FTL","LTL")
+freight_type <- c("FTL","LTL")
 
 ### ---------------------------------------------------------
 ### Emission Factor Table
 ### ---------------------------------------------------------
 emission_factors <- tibble(
-  transportation_type = c(
+  freight_type = c(
     "FTL","FTL","FTL",
     "LTL","LTL","LTL","LTL"
   ),
@@ -124,7 +124,7 @@ get_tons <- function(weight_value, weight_unit){
 ### ---------------------------------------------------------
 get_factors <- function(t_type, v_type){
   f <- emission_factors %>%
-    filter(transportation_type == t_type, vehicle_type == v_type)
+    filter(freight_type == t_type, vehicle_type == v_type)
   if(nrow(f)==0) stop("Emission factor not found for selected combination")
   f
 }
