@@ -5,6 +5,10 @@ library(shinyWidgets)
 
 source("Calculator_Logic.R")
 
+`%||%` <- function(a, b) {
+  if (!is.null(a)) a else b
+}
+
 ui <- fluidPage(
   titlePanel("Freight GHG Calculator"),
   sidebarLayout(
@@ -180,7 +184,7 @@ output$results_table <- renderReactable({
       weight_unit = colDef(name="Weight Unit"),
       CO2_kg = colDef(name="CO₂ Emissions (kg)"),
       CH4_g = colDef(name="CH₄ Emissions (g)"),
-      N2O_g = colDef(name="N2O Emissions (g)"),
+      N2O_g = colDef(name="N₂O Emissions (g)"),
       CO2e_tonnes = colDef(name="Total Emission\n(metric tonnes CO₂e)")
     ),
     bordered = FALSE,
