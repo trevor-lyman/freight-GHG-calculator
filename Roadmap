@@ -1,0 +1,30 @@
+Roadmap
+Trevor Pettit
+6 March 2026
+
+1. Define calcuator logic ✅
+    > LTL vs. FTL ✅
+    > Methods of transpo: truck, sea, air ✅
+    > Distance units: km, mile ✅
+    > Weight units: kg, tonne, lb, ton ✅
+    
+2. Define UI
+    > Shipping distance + units
+    > Shipment weight + units
+    > Transportation method
+    > Transportation type
+    > Ability to add lines for multiple legs
+    
+3. Branding elements
+    > Color/theme
+    > Logo
+    > LinkedIn/GitHub links
+    
+4. Future state/parking lot
+    > FAQ/about this project
+        > Source: https://www.epa.gov/climateleadership/simplified-ghg-emissions-calculator
+        > Intended use
+        > Why this is helpful
+        > Limitations
+        > About the author??
+    > Head to head comparison feature
