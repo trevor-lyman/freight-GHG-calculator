@@ -165,7 +165,7 @@ server <- function(input, output, session) {
         
         if(transportation_type == "FTL"){
           weight_value <- 0
-          weight_unit <- "short tons"
+          weight_unit <- "short ton"
         }
         
         data.frame(
