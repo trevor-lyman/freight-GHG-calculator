@@ -139,16 +139,15 @@ get_miles <- function(vehicle_type, distance_value, distance_unit) {
 }
 
 ### Weight Standardization Logic #### 
-# convert to short-tons
 get_tons <- function(weight_value, weight_unit) {
   if (weight_unit == "g") {
-    weight_value * g_to_tons
+    weight_value * g_to_ton
   } else if (weight_unit == "kg") {
-    weight_value * kg_to_tons
+    weight_value * kg_to_ton
   } else if (weight_unit == "metric tons") {
-    weight_value * tonnes_to_tons 
+    weight_value * tonnes_to_tons
   } else if (weight_unit == "lb") {
-    weight_value * lbs_to_tons 
+    weight_value * lbs_to_tons
   } else if (weight_unit == "short tons") {
     weight_value * tons_to_tons
   } else {
@@ -341,19 +340,3 @@ calculate_CO2e <- function(transportation_type, vehicle_type,
   )*kg_to_tonnes
 }
 
-if (interactive()) {
-  
-  transportation_type <- "LTL"
-  vehicle_type <- "Medium- and Heavy-Duty Truck"
-  distance_value <- 1
-  distance_unit <- "miles"
-  weight_value <- 100
-  weight_unit <- "short tons"
-  
-  df <- data.frame(
-    transportation_type, vehicle_type,
-    distance_value, distance_unit,
-    weight_value, weight_unit
-  )
-  
-}
