@@ -1,286 +1,165 @@
 library(shiny)
 library(dplyr)
-library(DT)
+library(reactable)
+library(shinyWidgets)
 
 source("Calculator_Logic.R")
 
 ui <- fluidPage(
-  
-  titlePanel("Shipping Greenhouse Gas Calculator"),
-  
-  fluidRow(
-    
-    column(
-      width = 4,
-      
+  titlePanel("Shipping GHG Calculator"),
+  sidebarLayout(
+    sidebarPanel(
+      # Action buttons
       actionButton("add_leg", "Add Leg"),
-      actionButton("remove_leg", "Remove Leg"),
-      
       br(), br(),
       
+      # Dynamic UI for each leg goes here
       uiOutput("legs_ui"),
-      
       br(),
-      
-      downloadButton("download_data", "Download Results")
-      
+      downloadButton("download_data","Download Table")
     ),
-    
-    column(
-      width = 8,
-      
-      h3("Emissions Results"),
-      
-      DTOutput("results_table")
-      
+    mainPanel(
+      # Table only
+      reactableOutput("results_table", height = "500px")
     )
-    
   )
-  
 )
 
-server <- function(input, output, session) {
+server <- function(input, output, session){
   
-  ### TRACK NUMBER OF LEGS
-  legs <- reactiveVal(1)
+  # Initialize 1 leg
+  rv <- reactiveValues(
+    legs = tibble(
+      Leg = 1,
+      transportation_type = "FTL",
+      vehicle_type = "Medium- and Heavy-Duty Truck",
+      distance_value = 1,
+      distance_unit = "mile",
+      weight_value = 1,
+      weight_unit = "short ton"
+    ),
+    counter = 1
+  )
   
+  # Add leg
   observeEvent(input$add_leg,{
-    legs(legs() + 1)
+    rv$counter <- rv$counter + 1
+    rv$legs <- bind_rows(rv$legs,
+                         tibble(
+                           Leg = rv$counter,
+                           transportation_type = "FTL",
+                           vehicle_type = "Medium- and Heavy-Duty Truck",
+                           distance_value = 1,
+                           distance_unit = "mile",
+                           weight_value = 1,
+                           weight_unit = "short ton"
+                         )
+    )
   })
   
-  observeEvent(input$remove_leg,{
-    if(legs() > 1){
-      legs(legs() - 1)
+  # Render dynamic UI for legs in sidebar
+  output$legs_ui <- renderUI({
+    req(rv$legs)
+    lapply(1:nrow(rv$legs), function(i){
+      leg <- rv$legs[i,]
+      wellPanel(
+        h4(paste("Leg", leg$Leg)),
+        selectInput(paste0("t_type_",i),"Transportation Type",
+                    choices = transportation_type,
+                    selected = leg$transportation_type),
+        selectInput(paste0("v_type_",i),"Vehicle Type",
+                    choices = get_vehicle_types(leg$transportation_type),
+                    selected = leg$vehicle_type),
+        numericInput(paste0("d_val_",i),"Distance",value=leg$distance_value),
+        selectInput(paste0("d_unit_",i),"Distance Unit",choices=distance_unit,selected=leg$distance_unit),
+        numericInput(paste0("w_val_",i),"Weight",value=leg$weight_value),
+        selectInput(paste0("w_unit_",i),"Weight Unit",choices=weight_unit,selected=leg$weight_unit)
+      )
+    })
+  })
+  
+  # Update reactive legs safely
+  observe({
+    req(rv$legs)
+    for(i in 1:nrow(rv$legs)){
+      t_in <- input[[paste0("t_type_",i)]] %||% rv$legs$transportation_type[i]
+      rv$legs$transportation_type[i] <- t_in
+      vt_choices <- get_vehicle_types(t_in)
+      v_in <- input[[paste0("v_type_",i)]] %||% vt_choices[1]
+      if(!(v_in %in% vt_choices)) v_in <- vt_choices[1]
+      rv$legs$vehicle_type[i] <- v_in
+      rv$legs$distance_value[i] <- input[[paste0("d_val_",i)]] %||% rv$legs$distance_value[i]
+      rv$legs$distance_unit[i] <- input[[paste0("d_unit_",i)]] %||% rv$legs$distance_unit[i]
+      rv$legs$weight_value[i] <- input[[paste0("w_val_",i)]] %||% rv$legs$weight_value[i]
+      rv$legs$weight_unit[i] <- input[[paste0("w_unit_",i)]] %||% rv$legs$weight_unit[i]
     }
   })
   
-  
-  ### BUILD LEG INPUT PANELS
-  output$legs_ui <- renderUI({
-    
-    n <- legs()
-    
-    tagList(
-      
-      lapply(1:n, function(i){
-        
-        wellPanel(
-          
-          h4(paste("Transit Leg", i)),
-          
-          selectInput(
-            paste0("transportation_type_",i),
-            "Transportation Type",
-            choices = transportation_type
-          ),
-          
-          uiOutput(paste0("vehicle_ui_",i)),
-          
-          numericInput(
-            paste0("distance_value_",i),
-            "Distance",
-            value = 1,
-            min = 0
-          ),
-          
-          selectInput(
-            paste0("distance_unit_",i),
-            "Distance Unit",
-            choices = distance_unit
-          ),
-          
-          conditionalPanel(
-            condition = sprintf(
-              "input['transportation_type_%s'] == 'LTL'",i
-            ),
-            
-            numericInput(
-              paste0("weight_value_",i),
-              "Weight",
-              value = 1,
-              min = 0
-            ),
-            
-            selectInput(
-              paste0("weight_unit_",i),
-              "Weight Unit",
-              choices = weight_unit
-            )
-            
-          )
-          
-        )
-        
-      })
-      
-    )
-    
-  })
-  
-  
-  ### VEHICLE TYPE DEPENDS ON TRANSPORTATION TYPE
-  observe({
-    
-    lapply(1:legs(), function(i){
-      
-      output[[paste0("vehicle_ui_",i)]] <- renderUI({
-        
-        req(input[[paste0("transportation_type_",i)]])
-        
-        selectInput(
-          paste0("vehicle_type_",i),
-          "Vehicle Type",
-          choices = get_vehicle_types(
-            input[[paste0("transportation_type_",i)]]
-          )
-        )
-        
-      })
-      
-    })
-    
-  })
-  
-  
-  ### BUILD EMISSIONS DATA
+  # Reactive emissions calculation
   emissions_data <- reactive({
+    req(rv$legs)
+    df <- rv$legs %>%
+      rowwise() %>%
+      mutate(
+        CO2_kg = round(calculate_CO2(transportation_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 3),
+        CH4_g = round(calculate_CH4(transportation_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 3),
+        N2O_g = round(calculate_N2O(transportation_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 3),
+        CO2e_tonnes = round(calculate_CO2e(transportation_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 6)
+      ) %>%
+      ungroup()
     
-    n <- legs()
-    
-    df <- bind_rows(
-      
-      lapply(1:n, function(i){
-        
-        transportation_type <- input[[paste0("transportation_type_",i)]]
-        vehicle_type <- input[[paste0("vehicle_type_",i)]]
-        distance_value <- input[[paste0("distance_value_",i)]]
-        distance_unit <- input[[paste0("distance_unit_",i)]]
-        weight_value <- input[[paste0("weight_value_",i)]]
-        weight_unit <- input[[paste0("weight_unit_",i)]]
-        
-        if(is.null(transportation_type) |
-           is.null(vehicle_type) |
-           is.null(distance_value) |
-           is.null(distance_unit)) return(NULL)
-        
-        if(transportation_type == "FTL"){
-          weight_value <- 0
-          weight_unit <- "short ton"
-        }
-        
-        data.frame(
-          
-          Leg = as.character(i),
-          
-          Transportation_Type = transportation_type,
-          Vehicle_Type = vehicle_type,
-          
-          Distance = distance_value,
-          Distance_Unit = distance_unit,
-          
-          Weight = weight_value,
-          Weight_Unit = weight_unit,
-          
-          CO2 = round(calculate_CO2(
-            transportation_type,
-            vehicle_type,
-            distance_value,
-            distance_unit,
-            weight_value,
-            weight_unit
-          ), digits = 3),
-          
-          CH4 = round(calculate_CH4(
-            transportation_type,
-            vehicle_type,
-            distance_value,
-            distance_unit,
-            weight_value,
-            weight_unit
-          ), digits = 3),
-          
-          N2O = round(calculate_N2O(
-            transportation_type,
-            vehicle_type,
-            distance_value,
-            distance_unit,
-            weight_value,
-            weight_unit
-          ), digits = 3),
-          
-          CO2e = round(calculate_CO2e(
-            transportation_type,
-            vehicle_type,
-            distance_value,
-            distance_unit,
-            weight_value,
-            weight_unit
-          ), digits = 6)
-          
-        )
-        
-      })
-      
-    )
-    
-    if(nrow(df)==0) return(NULL)
-    
+    # Totals row
     totals <- df %>%
       summarise(
-        Leg = "Total",
-        Transportation_Type = "",
-        Vehicle_Type = "",
-        Distance = NA_real_,
-        Distance_Unit = "",
-        Weight = NA_real_,
-        Weight_Unit = "",
-        CO2 = sum(CO2, na.rm = TRUE),
-        CH4 = sum(CH4, na.rm = TRUE),
-        N2O = sum(N2O, na.rm = TRUE),
-        CO2e = sum(CO2e, na.rm = TRUE)
+        Leg=NA,
+        transportation_type="Total",
+        vehicle_type="",
+        distance_value=sum(distance_value),
+        distance_unit="",
+        weight_value=sum(weight_value),
+        weight_unit="",
+        CO2_kg=sum(CO2_kg),
+        CH4_g=sum(CH4_g),
+        N2O_g=sum(N2O_g),
+        CO2e_tonnes=sum(CO2e_tonnes)
       )
     
-    bind_rows(df, totals)
-    
+    bind_rows(df,totals)
   })
   
-  
-  ### RENDER RESULTS TABLE
-  output$results_table <- renderDT({
-    
-    req(emissions_data())
-    
-    datatable(
-      emissions_data(),
-      rownames = FALSE,
-      options = list(
-        pageLength = 10,
-        dom = 't'
-      )
+  # Render table
+  output$results_table <- renderReactable({
+    df <- emissions_data()
+    reactable(
+      df,
+      columns=list(
+        Leg = colDef(name="Leg", width=50),
+        transportation_type = colDef(name="Transportation\nType"),
+        vehicle_type = colDef(name="Vehicle\nType"),
+        distance_value = colDef(name="Distance"),
+        distance_unit = colDef(name="Distance\nUnit"),
+        weight_value = colDef(name="Weight"),
+        weight_unit = colDef(name="Weight\nUnit"),
+        CO2_kg = colDef(name="CO₂ Emissions (kg)"),
+        CH4_g = colDef(name="CH₄ Emissions (g)"),
+        N2O_g = colDef(name="N₂O Emissions (g)"),
+        CO2e_tonnes = colDef(name="Total Emission\n(metric tonnes CO₂e)")
+      ),
+      bordered=TRUE,
+      highlight=TRUE,
+      resizable=TRUE,
+      defaultColDef=colDef(align="center", minWidth=80),
+      fullWidth=TRUE,
+      defaultPageSize=10
     )
-    
   })
   
-  
-  ### DOWNLOAD HANDLER
+  # Download CSV
   output$download_data <- downloadHandler(
-    
-    filename = function(){
-      paste0("shipping_emissions_",Sys.Date(),".csv")
-    },
-    
-    content = function(file){
-      
-      write.csv(
-        emissions_data(),
-        file,
-        row.names = FALSE
-      )
-      
-    }
-    
+    filename = function(){ "shipping_emissions.csv" },
+    content = function(file){ write.csv(emissions_data(), file, row.names = FALSE) }
   )
   
 }
 
-shinyApp(ui,server)
+shinyApp(ui, server)
