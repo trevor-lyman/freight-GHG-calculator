@@ -8,27 +8,21 @@ Trevor Pettit
     > Distance units: km, mile ✅
     > Weight units: kg, tonne, lb, ton ✅
     
-2. Define UI
+2. Define UI  ✅
     > Shipping distance + units ✅
     > Shipment weight + units ✅
     > Transportation method ✅
     > Transportation type ✅
     > Ability to add lines for multiple legs ✅
     
-3. Branding elements
-    > Color/theme
-    > Logo
-    > LinkedIn/GitHub links
+3. Branding elements ✅
+    > Color/theme ✅
+    > Logo ✅
+    > LinkedIn/GitHub links ✅
     
 4. Anotate 
     > Calculator_Logic.R
     > app.R
 
 5. Future state/parking lot
-    > FAQ/about this project
-        > Source: https://www.epa.gov/climateleadership/simplified-ghg-emissions-calculator
-        > Intended use
-        > Why this is helpful
-        > Limitations
-        > About the author??
     > Head to head comparison feature
