@@ -47,8 +47,13 @@ title_banner <- function(title_text = "Freight GHG Calculator",
     # Title + subtitle centered
     tags$div(
       style = "text-align: left; flex-grow: 1;",
-      tags$h1(title_text, style = "margin: 20px; font-size: 67px;"),
-      tags$h4(subtitle_text, style = "margin: 20px; font-size: 50px; 
+      tags$h1(title_text, style = "margin: 20px; margin-bottom: 0px; 
+              font-size: 67px;"),
+      tags$h4(subtitle_text, style = "margin: 20px; margin-top: 5px; 
+      margin-bottom: 20px; font-size: 50px; 
+              font-weight: normal; font-style: italic;"),
+      tags$h4("For best experience on mobile, use landscape mode", 
+      style = "margin: 20px; font-size: 16px; 
               font-weight: normal; font-style: italic;")
     ),
     
