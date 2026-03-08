@@ -9,6 +9,37 @@ source("Calculator_Logic.R")
   if (!is.null(a)) a else b
 }
 
+fmt_pub <- function(x, digits = NULL, sci_threshold = 0.1) {
+  
+  sci_to_sup <- function(val) {
+    s <- format(val, scientific = TRUE)
+    parts <- strsplit(s, "e")[[1]]
+    base <- parts[1]
+    exp  <- as.integer(parts[2])
+    paste0(base, " × 10<sup>", exp, "</sup>")
+  }
+  
+  # Round first
+  if (!is.null(digits)) {
+    x_rounded <- round(x, digits)
+  } else {
+    x_rounded <- x
+  }
+  
+  # Apply formatting
+  vapply(x_rounded, function(val) {
+    if (is.na(val)) return(NA)
+    if (abs(val) < sci_threshold & val != 0) {
+      sci_to_sup(val)
+    } else {
+      if (!is.null(digits)) {
+        formatC(val, format = "f", digits = digits)
+      } else {
+        trimws(format(val, scientific = FALSE))
+      }
+    }
+  }, character(1))
+}
 ui <- fluidPage(
   titlePanel("Freight GHG Calculator"),
   sidebarLayout(
@@ -132,10 +163,10 @@ server <- function(input, output, session){
     df <- rv$legs %>%
       rowwise() %>%
       mutate(
-        CO2_kg = round(calculate_CO2(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 3),
-        CH4_g = round(calculate_CH4(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 3),
-        N2O_g = round(calculate_N2O(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 3),
-        CO2e_tonnes = round(calculate_CO2e(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit), 6)
+        CO2_kg = calculate_CO2(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit),
+        CH4_g = calculate_CH4(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit),
+        N2O_g = calculate_N2O(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit),
+        CO2e_tonnes = calculate_CO2e(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit)
       ) %>%
       ungroup()
     
@@ -169,7 +200,11 @@ output$results_table <- renderReactable({
   df_table <- df %>%
     mutate(
       weight_value = ifelse(freight_type == "FTL" & !is.na(weight_value), NA, weight_value),
-      weight_unit  = ifelse(freight_type == "FTL" & !is.na(weight_unit), "", weight_unit)
+      weight_unit  = ifelse(freight_type == "FTL" & !is.na(weight_unit), "", weight_unit),
+      CO2_kg = fmt_pub(CO2_kg, 4),
+      CH4_g = fmt_pub(CH4_g, 1),
+      N2O_g = fmt_pub(N2O_g, 1),
+      CO2e_tonnes = fmt_pub(CO2e_tonnes, 7)
     )
   
   reactable(
@@ -182,10 +217,10 @@ output$results_table <- renderReactable({
       distance_unit = colDef(name="Distance Unit"),
       weight_value = colDef(name="Weight"),
       weight_unit = colDef(name="Weight Unit"),
-      CO2_kg = colDef(name="CO₂ Emissions (kg)"),
-      CH4_g = colDef(name="CH₄ Emissions (g)"),
-      N2O_g = colDef(name="N₂O Emissions (g)"),
-      CO2e_tonnes = colDef(name="Total Emission\n(metric tonnes CO₂e)")
+      CO2_kg = colDef(name="CO₂ Emissions (kg)", html = TRUE),
+      CH4_g = colDef(name="CH₄ Emissions (g)", html = TRUE),
+      N2O_g = colDef(name="N₂O Emissions (g)", html = TRUE),
+      CO2e_tonnes = colDef(name="Total Emission\n(metric tonnes CO₂e)", html = TRUE)
     ),
     bordered = FALSE,
     highlight = TRUE,
