@@ -1,13 +1,17 @@
+# Libraries
 library(shiny)
 library(dplyr)
 library(reactable)
 library(shinyWidgets)
 library(htmltools)
 
+# Source logic script
 source("Calculator_Logic.R")
 
+# Define null fallback operator
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
+# Define custom scientific notation formatter 
 fmt_pub <- function(x, digits = NULL, sci_threshold = 0.1) {
   if (!is.null(digits)) x <- round(x, digits)
   
@@ -31,15 +35,17 @@ fmt_pub <- function(x, digits = NULL, sci_threshold = 0.1) {
   }, USE.NAMES = FALSE)
 }
 
-# ---------- Your title banner UI ----------
+# Title banner UI
 title_banner <- function(title_text = "Freight GHG Calculator",
-                         subtitle_text = "Pettit Sustainability Solutions",
+                         subtitle_text = "Gibby's Sustainability Solutions",
                          banner_color = "#2C3E50",
                          logo_path = "logo.png") {
   
   tags$div(
-    style = paste0("display: flex; align-items: center; justify-content: space-between;",
-                   "background-color:", banner_color, "; color: white; padding: 15px 20px;"),
+    style = paste0("display: flex; align-items: center; 
+                   justify-content: space-between;",
+                   "background-color:", banner_color, "; 
+                   color: white; padding: 15px 20px;"),
     
     # Logo
     tags$img(src = logo_path, height = "200px"),
@@ -62,13 +68,13 @@ title_banner <- function(title_text = "Freight GHG Calculator",
   )
 }
 
-# ---------- UI ----------
+# UI
 ui <- fluidPage(
   
   # Banner at top
   title_banner(
-    banner_color = "#FF46A2",      # Customize banner color here
-    logo_path = "logo.png"          # Put your logo in www/logo.png
+    banner_color = "#FF46A2",      
+    logo_path = "logo.png"          
   ),
   
   br(),
@@ -87,7 +93,8 @@ ui <- fluidPage(
       
       # Citation panel
       wellPanel(
-        style = "background-color: #f8f9fa; border-left: 5px solid #FF46A2; padding: 10px; margin-top: 20px;",
+        style = "background-color: #f8f9fa; border-left: 5px solid #FF46A2; 
+        padding: 10px; margin-top: 20px;",
         tags$strong("Source: "), 
         tags$a(
           "EPA Simplified GHG Emissions Calculator",
@@ -96,11 +103,10 @@ ui <- fluidPage(
         )
       )
     )
-  ),  # close sidebarLayout
+  ),  
   
   br(), br(),
   
-  # Footer panel outside sidebarLayout
   # Footer panel outside sidebarLayout
   div(
     style = paste0(
@@ -113,15 +119,21 @@ ui <- fluidPage(
     ),
     "Trevor Pettit, 2026",
     tags$br(),
-    tags$a("About This Project", href = "https://github.com/trevor-lyman/freight-GHG-calculator", target = "_blank", style = "margin-right: 8px;"),
+    tags$a("About This Project", 
+           href = "https://github.com/trevor-lyman/freight-GHG-calculator", 
+           target = "_blank", style = "margin-right: 8px;"),
     tags$span("|", style = "margin: 0 8px; color: #555;"),
-    tags$a("GitHub", href = "https://github.com/trevor-lyman", target = "_blank", style = "margin-right: 8px;"),
+    tags$a("GitHub", 
+           href = "https://github.com/trevor-lyman", target = "_blank", 
+           style = "margin-right: 8px;"),
     tags$span("|", style = "margin: 0 8px; color: #555;"),
-    tags$a("LinkedIn", href = "https://www.linkedin.com/in/trevor-pettit-2b115a161/", target = "_blank")
+    tags$a("LinkedIn", 
+           href = "https://www.linkedin.com/in/trevor-pettit-2b115a161/", 
+           target = "_blank")
   )
 )
 
-# ---------- SERVER ----------
+# Server
 server <- function(input, output, session){
   
   # Initialize reactive values for legs
@@ -168,26 +180,30 @@ server <- function(input, output, session){
       leg <- rv$legs[i,]
       wellPanel(
         h4(paste("Leg", leg$Leg)),
-        selectInput(paste0("t_type_",i),"Freight Type",
+        selectInput(paste0("t_type_", i), "Freight Type",
                     choices = freight_type,
                     selected = leg$freight_type),
-        selectInput(paste0("v_type_",i),"Vehicle Type",
+        selectInput(paste0("v_type_", i), "Vehicle Type",
                     choices = get_vehicle_types(leg$freight_type),
                     selected = leg$vehicle_type),
-        numericInput(paste0("d_val_",i),"Distance",value=leg$distance_value),
-        selectInput(paste0("d_unit_",i),"Distance Unit",choices=distance_unit,selected=leg$distance_unit),
-        if(leg$freight_type=="LTL"){
+        numericInput(paste0("d_val_", i), "Distance",
+                     value = leg$distance_value),
+        selectInput(paste0("d_unit_", i), "Distance Unit",
+                    choices = distance_unit, selected = leg$distance_unit),
+        if(leg$freight_type == "LTL"){
           tagList(
             numericInput(
-              paste0("w_val_",i),
+              paste0("w_val_", i),
               "Weight",
-              value = ifelse(is.na(leg$weight_value) || leg$weight_value==0, 1, leg$weight_value)
+              value = ifelse(is.na(leg$weight_value) || leg$weight_value==0, 1, 
+                             leg$weight_value)
             ),
             selectInput(
-              paste0("w_unit_",i),
+              paste0("w_unit_", i),
               "Weight Unit",
               choices = weight_unit,
-              selected = ifelse(is.na(leg$weight_unit), "short ton", leg$weight_unit)
+              selected = ifelse(is.na(leg$weight_unit), "short ton", 
+                                leg$weight_unit)
             )
           )
         }
@@ -205,12 +221,16 @@ server <- function(input, output, session){
       v_in <- input[[paste0("v_type_",i)]] %||% vt_choices[1]
       if(!(v_in %in% vt_choices)) v_in <- vt_choices[1]
       rv$legs$vehicle_type[i] <- v_in
-      rv$legs$distance_value[i] <- input[[paste0("d_val_",i)]] %||% rv$legs$distance_value[i]
-      rv$legs$distance_unit[i] <- input[[paste0("d_unit_",i)]] %||% rv$legs$distance_unit[i]
+      rv$legs$distance_value[i] <- 
+        input[[paste0("d_val_", i)]] %||% rv$legs$distance_value[i]
+      rv$legs$distance_unit[i] <- 
+        input[[paste0("d_unit_", i)]] %||% rv$legs$distance_unit[i]
       
       if(t_in=="LTL"){
-        rv$legs$weight_value[i] <- input[[paste0("w_val_",i)]] %||% rv$legs$weight_value[i]
-        rv$legs$weight_unit[i] <- input[[paste0("w_unit_",i)]] %||% rv$legs$weight_unit[i]
+        rv$legs$weight_value[i] <- 
+          input[[paste0("w_val_", i)]] %||% rv$legs$weight_value[i]
+        rv$legs$weight_unit[i] <- 
+          input[[paste0("w_unit_", i)]] %||% rv$legs$weight_unit[i]
       } else {
         rv$legs$weight_value[i] <- 1
         rv$legs$weight_unit[i] <- "short ton"
@@ -224,29 +244,41 @@ server <- function(input, output, session){
     df <- rv$legs %>%
       rowwise() %>%
       mutate(
-        CO2_kg = calculate_CO2(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit),
-        CH4_g = calculate_CH4(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit),
-        N2O_g = calculate_N2O(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit),
-        CO2e_tonnes = calculate_CO2e(freight_type,vehicle_type,distance_value,distance_unit,weight_value,weight_unit)
+        CO2_kg = 
+          calculate_CO2(freight_type, vehicle_type, 
+                        distance_value, distance_unit, 
+                        weight_value, weight_unit),
+        CH4_g = 
+          calculate_CH4(freight_type, vehicle_type, 
+                        distance_value, distance_unit, 
+                        weight_value, weight_unit),
+        N2O_g = 
+          calculate_N2O(freight_type, vehicle_type,
+                        distance_value, distance_unit,
+                        weight_value, weight_unit),
+        CO2e_tonnes = 
+          calculate_CO2e(freight_type, vehicle_type,
+                         distance_value, distance_unit,
+                         weight_value, weight_unit)
       ) %>%
       ungroup()
     
-    df$weight_value[df$freight_type=="FTL"] <- NA
-    df$weight_unit[df$freight_type=="FTL"] <- NA
+    df$weight_value[df$freight_type == "FTL"] <- NA
+    df$weight_unit[df$freight_type == "FTL"] <- NA
     
     totals <- df %>%
       summarise(
-        Leg=NA,
-        freight_type="Total",
-        vehicle_type="",
-        distance_value=sum(distance_value),
-        distance_unit="",
-        weight_value=NA,
-        weight_unit="",
-        CO2_kg=sum(CO2_kg),
-        CH4_g=sum(CH4_g),
-        N2O_g=sum(N2O_g),
-        CO2e_tonnes=sum(CO2e_tonnes)
+        Leg = NA,
+        freight_type = "Total",
+        vehicle_type = "",
+        distance_value = sum(distance_value),
+        distance_unit = "",
+        weight_value = NA,
+        weight_unit = "",
+        CO2_kg = sum(CO2_kg),
+        CH4_g = sum(CH4_g),
+        N2O_g = sum(N2O_g),
+        CO2e_tonnes = sum(CO2e_tonnes)
       )
     
     bind_rows(df, totals)
@@ -259,10 +291,10 @@ server <- function(input, output, session){
     # Format numbers for display with HTML superscripts
     df_table <- df %>%
       mutate(
-        CO2_kg = fmt_pub(CO2_kg, 4),
-        CH4_g = fmt_pub(CH4_g, 1),
-        N2O_g = fmt_pub(N2O_g, 1),
-        CO2e_tonnes = fmt_pub(CO2e_tonnes, 7)
+        CO2_kg = fmt_pub(CO2_kg, 0),
+        CH4_g = fmt_pub(CH4_g, 2),
+        N2O_g = fmt_pub(N2O_g, 2),
+        CO2e_tonnes = fmt_pub(CO2e_tonnes, 3)
       )
     
     reactable(
@@ -291,7 +323,7 @@ server <- function(input, output, session){
           html = TRUE
         ),
         CO2e_tonnes = colDef(
-          name = "Total Emission\n(metric tonnes CO₂e)",
+          name = "Total Emissions\n(metric tonnes CO₂e)",
           cell = function(value) HTML(value),
           html = TRUE
         )
@@ -303,7 +335,9 @@ server <- function(input, output, session){
       fullWidth = TRUE,
       defaultPageSize = 10,
       rowStyle = function(index){
-        if(df_table$freight_type[index] == "Total") list(fontWeight = "bold") else list()
+        if(df_table$freight_type[index] == "Total") 
+          list(fontWeight = "bold") 
+        else list()
       }
     )
   })
@@ -311,7 +345,8 @@ server <- function(input, output, session){
   # Download CSV
   output$download_data <- downloadHandler(
     filename = function(){"shipping_emissions.csv"},
-    content = function(file){ write.csv(emissions_data(), file, row.names = FALSE) }
+    content = function(file){ write.csv(emissions_data(), 
+                                        file, row.names = FALSE) }
   )
   
 }

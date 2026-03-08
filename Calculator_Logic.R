@@ -97,25 +97,33 @@ emission_factors <- tibble(
 ### Vehicle Logic
 ### ---------------------------------------------------------
 get_vehicle_types <- function(t_type) {
-  if(t_type=="FTL") c("Medium- and Heavy-Duty Truck","Passenger Car","Light-Duty Truck")
-  else if(t_type=="LTL") c("Medium- and Heavy-Duty Truck","Rail","Waterborne Craft","Aircraft")
+  if(t_type == "FTL") c("Medium- and Heavy-Duty Truck",
+                        "Passenger Car",
+                        "Light-Duty Truck")
+  else if(t_type == "LTL") c("Medium- and Heavy-Duty Truck",
+                             "Rail",
+                             "Waterborne Craft",
+                             "Aircraft")
   else character(0)
 }
 
 get_carbon_unit <- function(t_type) {
-  if(t_type=="FTL") "Vehicle-Miles" else if(t_type=="LTL") "Short Ton-Miles" else NA
+  if(t_type == "FTL") "Vehicle-Miles" 
+  else if(t_type == "LTL") "Short Ton-Miles" else NA
 }
 
 ### ---------------------------------------------------------
 ### Unit Standardization
 ### ---------------------------------------------------------
 get_miles <- function(distance_value, distance_unit){
-  if(!distance_unit %in% names(distance_to_mile)) stop("Distance unit not recognized")
+  if(!distance_unit %in% names(distance_to_mile)) 
+    stop("Distance unit not recognized")
   distance_value * distance_to_mile[[distance_unit]]
 }
 
 get_tons <- function(weight_value, weight_unit){
-  if(!weight_unit %in% names(weight_to_ton)) stop("Weight unit not recognized")
+  if(!weight_unit %in% names(weight_to_ton)) 
+    stop("Weight unit not recognized")
   weight_value * weight_to_ton[[weight_unit]]
 }
 
@@ -125,37 +133,41 @@ get_tons <- function(weight_value, weight_unit){
 get_factors <- function(t_type, v_type){
   f <- emission_factors %>%
     filter(freight_type == t_type, vehicle_type == v_type)
-  if(nrow(f)==0) stop("Emission factor not found for selected combination")
+  if(nrow(f)==0) 
+    stop("Emission factor not found for selected combination")
   f
 }
 
 ### ---------------------------------------------------------
 ### Gas Calculations
 ### ---------------------------------------------------------
-calculate_CO2 <- function(t_type,v_type,d_val,d_unit,w_val,w_unit){
-  f <- get_factors(t_type,v_type)
-  miles <- get_miles(d_val,d_unit)
-  if(get_carbon_unit(t_type)=="Vehicle-Miles") miles * f$CO2 else miles * get_tons(w_val,w_unit) * f$CO2
+calculate_CO2 <- function(t_type, v_type, d_val, d_unit, w_val, w_unit){
+  f <- get_factors(t_type, v_type)
+  miles <- get_miles(d_val, d_unit)
+  if(get_carbon_unit(t_type) == "Vehicle-Miles") 
+    miles * f$CO2 else miles * get_tons(w_val,w_unit) * f$CO2
 }
 
-calculate_CH4 <- function(t_type,v_type,d_val,d_unit,w_val,w_unit){
-  f <- get_factors(t_type,v_type)
-  miles <- get_miles(d_val,d_unit)
-  if(get_carbon_unit(t_type)=="Vehicle-Miles") miles * f$CH4 else miles * get_tons(w_val,w_unit) * f$CH4
+calculate_CH4 <- function(t_type, v_type, d_val, d_unit, w_val, w_unit){
+  f <- get_factors(t_type, v_type)
+  miles <- get_miles(d_val, d_unit)
+  if(get_carbon_unit(t_type) == "Vehicle-Miles") 
+    miles * f$CH4 else miles * get_tons(w_val,w_unit) * f$CH4
 }
 
-calculate_N2O <- function(t_type,v_type,d_val,d_unit,w_val,w_unit){
-  f <- get_factors(t_type,v_type)
-  miles <- get_miles(d_val,d_unit)
-  if(get_carbon_unit(t_type)=="Vehicle-Miles") miles * f$N2O else miles * get_tons(w_val,w_unit) * f$N2O
+calculate_N2O <- function(t_type, v_type, d_val, d_unit, w_val, w_unit){
+  f <- get_factors(t_type, v_type)
+  miles <- get_miles(d_val, d_unit)
+  if(get_carbon_unit(t_type) == "Vehicle-Miles") 
+    miles * f$N2O else miles * get_tons(w_val,w_unit) * f$N2O
 }
 
 ### ---------------------------------------------------------
 ### CO2e Calculation
 ### ---------------------------------------------------------
-calculate_CO2e <- function(t_type,v_type,d_val,d_unit,w_val,w_unit){
-  CO2 <- calculate_CO2(t_type,v_type,d_val,d_unit,w_val,w_unit)
-  CH4 <- calculate_CH4(t_type,v_type,d_val,d_unit,w_val,w_unit)
-  N2O <- calculate_N2O(t_type,v_type,d_val,d_unit,w_val,w_unit)
+calculate_CO2e <- function(t_type, v_type, d_val, d_unit, w_val, w_unit){
+  CO2 <- calculate_CO2(t_type, v_type, d_val, d_unit, w_val, w_unit)
+  CH4 <- calculate_CH4(t_type, v_type, d_val, d_unit, w_val, w_unit)
+  N2O <- calculate_N2O(t_type, v_type, d_val, d_unit, w_val, w_unit)
   (CO2*GWP_CO2 + CH4*GWP_CH4*g_to_kg + N2O*GWP_N2O*g_to_kg)*kg_to_tonne
 }

@@ -64,7 +64,5 @@ Source: [EPA Simplified GHG Emissions Calculator](https://www.epa.gov/climatelea
 
 ---
 
-## Footer
-
 Trevor Pettit, 2026  
 [About This Project](https://github.com/trevor-lyman/freight-GHG-calculator) | [GitHub](https://github.com/trevor-lyman) | [LinkedIn](https://www.linkedin.com/in/trevor-pettit-2b115a161/)
