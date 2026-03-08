@@ -9,10 +9,7 @@ source("Calculator_Logic.R")
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
 fmt_pub <- function(x, digits = NULL, sci_threshold = 0.1) {
-  
-  if (!is.null(digits)) {
-    x <- round(x, digits)
-  }
+  if (!is.null(digits)) x <- round(x, digits)
   
   sci_to_sup <- function(val) {
     s <- format(val, scientific = TRUE)
@@ -22,9 +19,10 @@ fmt_pub <- function(x, digits = NULL, sci_threshold = 0.1) {
     paste0(base, " × 10<sup>", exp, "</sup>")
   }
   
+  # Use sapply to ensure one element per value
   sapply(x, function(val) {
     if (is.na(val)) {
-      NA
+      ""  # empty string instead of NA
     } else if (abs(val) < sci_threshold & val != 0) {
       sci_to_sup(val)
     } else {
@@ -274,19 +272,23 @@ server <- function(input, output, session){
         weight_unit = colDef(name = "Weight Unit"),
         CO2_kg = colDef(
           name = "CO₂ Emissions (kg)",
-          cell = function(value) HTML(value)
+          cell = function(value) HTML(value),
+          html = TRUE
         ),
         CH4_g = colDef(
           name = "CH₄ Emissions (g)",
-          cell = function(value) HTML(value)
+          cell = function(value) HTML(value),
+          html = TRUE
         ),
         N2O_g = colDef(
           name = "N₂O Emissions (g)",
-          cell = function(value) HTML(value)
+          cell = function(value) HTML(value),
+          html = TRUE
         ),
         CO2e_tonnes = colDef(
           name = "Total Emission\n(metric tonnes CO₂e)",
-          cell = function(value) HTML(value)
+          cell = function(value) HTML(value),
+          html = TRUE
         )
       ),
       bordered = FALSE,
