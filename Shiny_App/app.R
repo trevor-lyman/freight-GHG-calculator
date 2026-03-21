@@ -57,9 +57,6 @@ title_banner <- function(title_text = "Freight GHG Calculator",
               font-size: 67px;"),
       tags$h4(subtitle_text, style = "margin: 20px; margin-top: 5px; 
       margin-bottom: 20px; font-size: 50px; 
-              font-weight: normal; font-style: italic;"),
-      tags$h4("For best experience on mobile, use landscape mode", 
-      style = "margin: 20px; font-size: 16px; 
               font-weight: normal; font-style: italic;")
     ),
     
@@ -118,7 +115,7 @@ ui <- fluidPage(
       "color: #555;"
     ),
     "Trevor Pettit, 2026",
-    tags$br(),
+    tags$br(), tags$br(),
     tags$a("About This Project", 
            href = "https://github.com/trevor-lyman/freight-GHG-calculator", 
            target = "_blank", style = "margin-right: 8px;"),
