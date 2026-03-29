@@ -2,6 +2,8 @@
 
 A Shiny web application to calculate greenhouse gas (GHG) emissions for freight transportation. The app allows users to input freight legs, vehicle types, distances, and weights, and it computes CO₂, CH₄, N₂O emissions, and total CO₂e.
 
+# Check out the live app: https://tpettit3.shinyapps.io/freight_GHG_calculator/
+
 ---
 
 ## Features
